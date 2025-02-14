@@ -84,11 +84,24 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
       appBar: AppBar(
         title: const Text(
           'Face Recognition',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 10,
         centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade100, Colors.purple.shade100],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -98,24 +111,32 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
             children: [
               Text(
                 'Faces Detected: ${_faces.length}',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
               const SizedBox(height: 20),
               Card(
                 elevation: 10,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Container(
                   width: 300,
                   height: 300,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      colors: [Colors.blue.shade50, Colors.purple.shade50],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                   ),
                   child: _image != null
                       ? ClipRRect(
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius: BorderRadius.circular(20),
                           child: CustomPaint(
                             painter: _imageUi != null
                                 ? FacePainter(_imageUi!, _faces)
@@ -123,35 +144,56 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
                           ),
                         )
                       : const Center(
-                          child: Icon(
-                            Icons.image,
-                            size: 100,
-                            color: Colors.grey,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.image,
+                                size: 100,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                'No Image Selected',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                 ),
               ),
               const SizedBox(height: 20),
               _isLoading
-                  ? const CircularProgressIndicator()
+                  ? const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                    )
                   : Column(
                       children: [
                         CustomElevatedButton(
                           text: 'Capture Image',
                           onPressed: captureImage,
-                          //icon: Icons.camera_alt,
+                          icon: Icons.camera_alt,
+                          backgroundColor: Colors.blue,
+                          textColor: Colors.white,
                         ),
                         const SizedBox(height: 10),
                         CustomElevatedButton(
                           text: 'Choose Image',
                           onPressed: chooseImage,
-                         // icon: Icons.photo_library,
+                          icon: Icons.photo_library,
+                          backgroundColor: Colors.purple,
+                          textColor: Colors.white,
                         ),
                         const SizedBox(height: 10),
                         CustomElevatedButton(
                           text: 'Clear Image',
                           onPressed: clearImage,
-                         // icon: Icons.delete,
+                          icon: Icons.delete,
+                          backgroundColor: Colors.red,
+                          textColor: Colors.white,
                         ),
                       ],
                     ),
@@ -161,7 +203,8 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: captureImage,
-        child: const Icon(Icons.camera_alt),
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.camera_alt, color: Colors.white),
       ),
     );
   }
