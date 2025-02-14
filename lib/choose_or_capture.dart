@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:ui' as ui;
-import 'package:google_fonts/google_fonts.dart'; 
-import 'package:flutter_spinkit/flutter_spinkit.dart'; 
+import 'package:google_fonts/google_fonts.dart'; // For better typography
+import 'package:flutter_spinkit/flutter_spinkit.dart'; // For custom loading animation
 
 class ChooseOrCapture extends StatefulWidget {
   const ChooseOrCapture({super.key});
@@ -17,12 +17,37 @@ class ChooseOrCapture extends StatefulWidget {
   State<ChooseOrCapture> createState() => _ChooseOrCaptureState();
 }
 
-class _ChooseOrCaptureState extends State<ChooseOrCapture> {
+class _ChooseOrCaptureState extends State<ChooseOrCapture>
+    with SingleTickerProviderStateMixin {
   File? _image;
   final ImagePicker _picker = ImagePicker();
   List<Face> _faces = [];
   ui.Image? _imageUi;
   bool _isLoading = false;
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   Future<void> chooseImage() async {
     setState(() {
@@ -54,6 +79,7 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
         _faces = faces;
       });
       await loadImage(imageFile);
+      _controller.forward(from: 0.0); // Trigger fade-in animation
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -165,20 +191,26 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
                 child: _image != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(20),
-                        child: CustomPaint(
-                          painter: _imageUi != null
-                              ? FacePainter(_imageUi!, _faces)
-                              : null,
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: CustomPaint(
+                            painter: _imageUi != null
+                                ? FacePainter(_imageUi!, _faces)
+                                : null,
+                          ),
                         ),
                       )
                     : Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.image,
-                              size: 100,
-                              color: Colors.grey.withOpacity(0.5),
+                            RotationTransition(
+                              turns: _controller,
+                              child: Icon(
+                                Icons.image,
+                                size: 100,
+                                color: Colors.grey.withOpacity(0.5),
+                              ),
                             ),
                             const SizedBox(height: 10),
                             Text(
@@ -200,28 +232,37 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
                     )
                   : Column(
                       children: [
-                        CustomElevatedButton(
-                          text: 'Capture Image',
-                          onPressed: _isLoading ? null : captureImage,
-                          icon: Icons.camera_alt,
-                          backgroundColor: Colors.blue,
-                          textColor: Colors.white,
+                        ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: CustomElevatedButton(
+                            text: 'Capture Image',
+                            onPressed: _isLoading ? null : captureImage,
+                            icon: Icons.camera_alt,
+                            backgroundColor: Colors.blue,
+                            textColor: Colors.white,
+                          ),
                         ),
                         const SizedBox(height: 10),
-                        CustomElevatedButton(
-                          text: 'Choose Image',
-                          onPressed: _isLoading ? null : chooseImage,
-                          icon: Icons.photo_library,
-                          backgroundColor: Colors.purple,
-                          textColor: Colors.white,
+                        ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: CustomElevatedButton(
+                            text: 'Choose Image',
+                            onPressed: _isLoading ? null : chooseImage,
+                            icon: Icons.photo_library,
+                            backgroundColor: Colors.purple,
+                            textColor: Colors.white,
+                          ),
                         ),
                         const SizedBox(height: 10),
-                        CustomElevatedButton(
-                          text: 'Clear Image',
-                          onPressed: _isLoading ? null : clearImage,
-                          icon: Icons.delete,
-                          backgroundColor: Colors.red,
-                          textColor: Colors.white,
+                        ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: CustomElevatedButton(
+                            text: 'Clear Image',
+                            onPressed: _isLoading ? null : clearImage,
+                            icon: Icons.delete,
+                            backgroundColor: Colors.red,
+                            textColor: Colors.white,
+                          ),
                         ),
                       ],
                     ),
@@ -230,7 +271,7 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
         ),
       ),
       floatingActionButton: ScaleTransition(
-        scale: AlwaysStoppedAnimation(_isLoading ? 0.9 : 1.0),
+        scale: _scaleAnimation,
         child: FloatingActionButton(
           onPressed: _isLoading ? null : captureImage,
           backgroundColor: Colors.blue,
