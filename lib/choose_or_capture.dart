@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:ui' as ui;
+import 'package:google_fonts/google_fonts.dart'; 
+import 'package:flutter_spinkit/flutter_spinkit.dart'; 
 
 class ChooseOrCapture extends StatefulWidget {
   const ChooseOrCapture({super.key});
@@ -30,6 +32,13 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
     if (image != null) {
       final File imageFile = File(image.path);
       await detectFaces(imageFile);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No image selected.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
     setState(() {
       _isLoading = false;
@@ -37,13 +46,22 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
   }
 
   Future<void> detectFaces(File imageFile) async {
-    final faceDetectorModel = FaceDetectorModel();
-    List<Face> faces = await faceDetectorModel.detectFaces(imageFile);
-    setState(() {
-      _image = imageFile;
-      _faces = faces;
-    });
-    await loadImage(imageFile);
+    try {
+      final faceDetectorModel = FaceDetectorModel();
+      List<Face> faces = await faceDetectorModel.detectFaces(imageFile);
+      setState(() {
+        _image = imageFile;
+        _faces = faces;
+      });
+      await loadImage(imageFile);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error detecting faces: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> loadImage(File file) async {
@@ -63,6 +81,13 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
     if (photo != null) {
       final File imageFile = File(photo.path);
       await detectFaces(imageFile);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No image captured.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
     setState(() {
       _isLoading = false;
@@ -82,16 +107,16 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Face Recognition',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 24,
           ),
         ),
         backgroundColor: Colors.white,
-        elevation: 10,
+        elevation: 0,
         centerTitle: true,
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -111,70 +136,73 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
             children: [
               Text(
                 'Faces Detected: ${_faces.length}',
-                style: const TextStyle(
+                style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 20),
-              Card(
-                elevation: 10,
-                shape: RoundedRectangleBorder(
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                ),
-                child: Container(
-                  width: 300,
-                  height: 300,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade50, Colors.purple.shade50],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                  gradient: LinearGradient(
+                    colors: [Colors.blue.shade50, Colors.purple.shade50],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: _image != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: CustomPaint(
-                            painter: _imageUi != null
-                                ? FacePainter(_imageUi!, _faces)
-                                : null,
-                          ),
-                        )
-                      : const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.image,
-                                size: 100,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: _image != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: CustomPaint(
+                          painter: _imageUi != null
+                              ? FacePainter(_imageUi!, _faces)
+                              : null,
+                        ),
+                      )
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image,
+                              size: 100,
+                              color: Colors.grey.withOpacity(0.5),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'No Image Selected',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
                                 color: Colors.grey,
                               ),
-                              SizedBox(height: 10),
-                              Text(
-                                'No Image Selected',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                ),
+                      ),
               ),
               const SizedBox(height: 20),
               _isLoading
-                  ? const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                  ? SpinKitFadingCircle(
+                      color: Colors.blue,
+                      size: 50.0,
                     )
                   : Column(
                       children: [
                         CustomElevatedButton(
                           text: 'Capture Image',
-                          onPressed: captureImage,
+                          onPressed: _isLoading ? null : captureImage,
                           icon: Icons.camera_alt,
                           backgroundColor: Colors.blue,
                           textColor: Colors.white,
@@ -182,7 +210,7 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
                         const SizedBox(height: 10),
                         CustomElevatedButton(
                           text: 'Choose Image',
-                          onPressed: chooseImage,
+                          onPressed: _isLoading ? null : chooseImage,
                           icon: Icons.photo_library,
                           backgroundColor: Colors.purple,
                           textColor: Colors.white,
@@ -190,7 +218,7 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
                         const SizedBox(height: 10),
                         CustomElevatedButton(
                           text: 'Clear Image',
-                          onPressed: clearImage,
+                          onPressed: _isLoading ? null : clearImage,
                           icon: Icons.delete,
                           backgroundColor: Colors.red,
                           textColor: Colors.white,
@@ -201,10 +229,13 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: captureImage,
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.camera_alt, color: Colors.white),
+      floatingActionButton: ScaleTransition(
+        scale: AlwaysStoppedAnimation(_isLoading ? 0.9 : 1.0),
+        child: FloatingActionButton(
+          onPressed: _isLoading ? null : captureImage,
+          backgroundColor: Colors.blue,
+          child: const Icon(Icons.camera_alt, color: Colors.white),
+        ),
       ),
     );
   }
