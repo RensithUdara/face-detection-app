@@ -20,12 +20,20 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
   final ImagePicker _picker = ImagePicker();
   List<Face> _faces = [];
   ui.Image? _imageUi;
+  bool _isLoading = false;
+
   Future<void> chooseImage() async {
+    setState(() {
+      _isLoading = true;
+    });
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       final File imageFile = File(image.path);
       await detectFaces(imageFile);
     }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> detectFaces(File imageFile) async {
@@ -48,11 +56,17 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
   }
 
   Future<void> captureImage() async {
+    setState(() {
+      _isLoading = true;
+    });
     final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
     if (photo != null) {
       final File imageFile = File(photo.path);
       await detectFaces(imageFile);
     }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   void clearImage() {
@@ -70,48 +84,84 @@ class _ChooseOrCaptureState extends State<ChooseOrCapture> {
       appBar: AppBar(
         title: const Text(
           'Face Recognition',
-          style: TextStyle(color: Colors.black),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
+        elevation: 10,
+        centerTitle: true,
       ),
       body: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Faces Detected: ${_faces.length}',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            _image != null
-                ? SizedBox(
-                    width: 300,
-                    height: 300,
-                    child: CustomPaint(
-                      painter: _imageUi != null
-                          ? FacePainter(_imageUi!, _faces)
-                          : null,
-                    ),
-                  )
-                : Container(
-                    width: 300,
-                    height: 300,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Faces Detected: ${_faces.length}',
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Card(
+                elevation: 10,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Container(
+                  width: 300,
+                  height: 300,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
                     color: Colors.grey[200],
-                    child: const Icon(
-                      Icons.image,
-                      size: 100,
-                      color: Colors.grey,
-                    ),
                   ),
-            SizedBox(height: 20),
-            CustomElevatedButton(
-                text: 'Capture Image', onPressed: captureImage),
-            SizedBox(height: 20),
-            CustomElevatedButton(text: 'Choose Image', onPressed: chooseImage),
-            SizedBox(height: 20),
-            CustomElevatedButton(text: 'Clear Image', onPressed: clearImage),
-          ],
+                  child: _image != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: CustomPaint(
+                            painter: _imageUi != null
+                                ? FacePainter(_imageUi!, _faces)
+                                : null,
+                          ),
+                        )
+                      : const Center(
+                          child: Icon(
+                            Icons.image,
+                            size: 100,
+                            color: Colors.grey,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : Column(
+                      children: [
+                        CustomElevatedButton(
+                          text: 'Capture Image',
+                          onPressed: captureImage,
+                          //icon: Icons.camera_alt,
+                        ),
+                        const SizedBox(height: 10),
+                        CustomElevatedButton(
+                          text: 'Choose Image',
+                          onPressed: chooseImage,
+                         // icon: Icons.photo_library,
+                        ),
+                        const SizedBox(height: 10),
+                        CustomElevatedButton(
+                          text: 'Clear Image',
+                          onPressed: clearImage,
+                         // icon: Icons.delete,
+                        ),
+                      ],
+                    ),
+            ],
+          ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: captureImage,
+        child: const Icon(Icons.camera_alt),
       ),
     );
   }
